@@ -1,4 +1,4 @@
-# 🏆 Hackathon Kearney – Winning Project
+# Hackathon Kearney – Winning Project
 
 This repository contains the code developed for the **X Hackathon of the Cátedra de Industria Conectada**, organized by **Universidad Pontificia Comillas (ICAI)** in collaboration with **Kearney** and **CAF**, where this project achieved **✨ 1st Place (Winners)**.
 
@@ -14,7 +14,7 @@ The solution integrates a lightweight backend with multiple APIs and a user-frie
 
 ---
 
-## 🚀 Requirements
+## Requirements
 
 - Python 3.9+
 - Modern web browser (Chrome, Firefox, Edge, Safari)
@@ -39,7 +39,7 @@ python -m backend.repair_api
 
 Keep both terminals running — the APIs must stay active for the frontend to work.
 
-### 🌐 Launch the Frontend
+### Launch the Frontend
 
 Once the backend services are running, open this file in your browser:
 
@@ -57,7 +57,7 @@ python -m http.server 8000
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```plaintext
 hackathon_kearney/
@@ -84,13 +84,13 @@ hackathon_kearney/
 
 ---
 
-## 🖼️ Website Preview
+## Website Preview
 
 ![Website Preview](./website.png)
 
 ---
 
-## 📝 API Endpoints Documentation
+## API Endpoints Documentation
 
 This section documents the backend APIs for external integration. Make sure both `backend.app` and `backend.repair_api` are running.
 
@@ -159,7 +159,7 @@ print(response.json())
 
 ---
 
-## 🏅 Acknowledgements
+## Acknowledgements
 
 Special thanks to:
 
