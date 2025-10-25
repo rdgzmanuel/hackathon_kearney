@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Predicción de Reparaciones</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { Search, ArrowLeft, Wrench, Package, AlertCircle, Loader2, Mic, MicOff, Volume2 } = {
+            Search: (props) => <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
+            ArrowLeft: (props) => <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>,
+            Wrench: (props) => <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+            Package: (props) => <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
+            AlertCircle: (props) => <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+            Loader2: (props) => <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24" className="animate-spin"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>,
+            Mic: (props) => <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>,
+            MicOff: (props) => <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>,
+            Volume2: (props) => <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
+        };
+
+const RepairPredictionSystem = () => {
+  const [step, setStep] = useState('input');
+  const [description, setDescription] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [components, setComponents] = useState([]);
+  const [selectedComponent, setSelectedComponent] = useState(null);
+  const [allRepairs, setAllRepairs] = useState([]);
+  const [repairPage, setRepairPage] = useState(0);
+  const [error, setError] = useState('');
+  const [componentPage, setComponentPage] = useState(0);
+  
+  // Voice recognition states
+  const [isListening, setIsListening] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(true);
+  const [interimTranscript, setInterimTranscript] = useState('');
+  const recognitionRef = useRef(null);
+
+  // Initialize speech recognition
+  useEffect(() => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      setVoiceSupported(false);
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'es-ES';
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      setInterimTranscript('');
+    };
+
+    recognition.onresult = (event) => {
+      let interim = '';
+      let final = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          final += transcript + ' ';
+        } else {
+          interim += transcript;
+        }
+      }
+
+      if (final) {
+        setDescription(prev => (prev + ' ' + final).trim());
+      }
+      setInterimTranscript(interim);
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+      if (event.error === 'no-speech') {
+        setError('No se detecta voz. Por favor, intenta de nuevo.');
+      } else if (event.error === 'not-allowed') {
+        setError('Permiso de micrófono denegado. Por favor, habilita el micrófono.');
+        setVoiceSupported(false);
+      } else {
+        setError('Error en el reconocimiento de voz: ' + event.error);
+      }
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      setInterimTranscript('');
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
+  const toggleVoiceRecording = () => {
+    if (!recognitionRef.current) return;
+
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      setError('');
+      try {
+        recognitionRef.current.start();
+      } catch (err) {
+        console.error('Error starting recognition:', err);
+        setError('No se pudo iniciar el reconocimiento de voz');
+      }
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!description.trim()) {
+      setError('Por favor ingrese una descripción del síntoma');
+      return;
+    }
+
+    // Stop recording if active
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('http://localhost:5001/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description: description })
+      });
+
+      if (!response.ok) throw new Error('Error al obtener predicciones');
+      
+      const data = await response.json();
+      
+      const parsedData = data.map(item => ({
+        ...item,
+        embedding: typeof item.embedding === 'string' 
+          ? item.embedding.match(/[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?/g)?.map(Number) || []
+          : item.embedding
+      }));
+      
+      setComponents(parsedData);
+      setStep('components');
+    } catch (err) {
+      setError('Error al predecir componentes. AsegÃºrese de que la API estÃ© ejecutÃ¡ndose en el puerto 5001.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleComponentSelect = async (component) => {
+    setSelectedComponent(component);
+    setLoading(true);
+    setError('');
+    setRepairPage(0);
+
+    try {
+      const response = await fetch('http://localhost:5002/rank_repairs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          component_predictions: components,
+          selected_component: component.componentes
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error('Error al obtener reparaciones: ' + response.status);
+      }
+      
+      const data = await response.json();
+      
+      if (!data || data.length === 0) {
+        throw new Error('No se encontraron reparaciones para este componente');
+      }
+      
+      setAllRepairs(data);
+      setStep('repairs');
+    } catch (err) {
+      setError(`Error al cargar reparaciones: ${err.message}. AsegÃºrese de que la API estÃ© ejecutÃ¡ndose en el puerto 5002.`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetToInput = () => {
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+    setStep('input');
+    setDescription('');
+    setComponents([]);
+    setSelectedComponent(null);
+    setAllRepairs([]);
+    setRepairPage(0);
+    setError('');
+    setComponentPage(0);
+    setInterimTranscript('');
+  };
+
+  const backToComponents = () => {
+    setStep('components');
+    setSelectedComponent(null);
+    setAllRepairs([]);
+    setRepairPage(0);
+  };
+
+  const startIndex = componentPage * 3;
+  const endIndex = startIndex + 3;
+  const displayedComponents = components.slice(startIndex, endIndex);
+  const hasMoreComponents = endIndex < components.length;
+  const hasPreviousComponents = componentPage > 0;
+
+  const repairStartIndex = repairPage * 3;
+  const repairEndIndex = repairStartIndex + 3;
+  const displayedRepairs = allRepairs.slice(repairStartIndex, repairEndIndex);
+  const hasMoreRepairs = repairEndIndex < allRepairs.length;
+  const hasPreviousRepairs = repairPage > 0;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-6">
+      {/* Header */}
+      <div className="max-w-6xl mx-auto mb-8">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-3 mb-4">
+            <Wrench className="w-12 h-12 text-blue-400" />
+            <h1 className="text-5xl font-bold text-white">AGENT CAFFY</h1>
+          </div>
+          <p className="text-gray-300 text-lg">Sistema inteligente con entrada de voz</p>
+          <div className="mt-4">
+            <button
+  onClick={() => window.open('register.html', '_blank')}
+  className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+>
+  NUEVO REGISTRO MANUAL
+</button>
+</div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto">
+        {/* Step 1: Input Description */}
+        {step === 'input' && (
+          <div className="animate-fadeIn">
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20">
+              <h2 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
+                <Search className="w-6 h-6 text-blue-400" />
+                DESCRIBE EL SÍNTOMA
+              </h2>
+              
+              <div className="space-y-4">
+                <div className="relative">
+                  <textarea
+                    value={description + (interimTranscript ? ' ' + interimTranscript : '')}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Escribe o habla para describir el sí­ntoma (ej: 'tuberí­a rota en sistema hidráulico')"
+                    className="w-full h-32 px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && e.ctrlKey) handleSearch();
+                    }}
+                    disabled={isListening}
+                  />
+                  {interimTranscript && (
+                    <div className="absolute bottom-2 right-2 flex items-center gap-2 bg-blue-500/20 px-3 py-1 rounded-lg border border-blue-400/30">
+                      <Volume2 className="w-4 h-4 text-blue-300 animate-pulse" />
+                      <span className="text-blue-200 text-sm">Escuchando...</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Voice Control Button */}
+                {voiceSupported && (
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={toggleVoiceRecording}
+                      className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
+                        isListening 
+                          ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' 
+                          : 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white'
+                      } shadow-lg hover:shadow-xl`}
+                    >
+                      {isListening ? (
+                        <>
+                          <MicOff className="w-5 h-5" />
+                          DETENER GRABACIÓN
+                        </>
+                      ) : (
+                        <>
+                          <Mic className="w-5 h-5" />
+                          USAR MICRÓFONO
+                        </>
+                      )}
+                    </button>
+                    {isListening && (
+                      <span className="text-gray-300 text-sm flex items-center gap-2">
+                        <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                        Grabando...
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {!voiceSupported && (
+                  <div className="flex items-center gap-2 text-yellow-400 bg-yellow-500/10 px-4 py-3 rounded-lg border border-yellow-500/20">
+                    <AlertCircle className="w-5 h-5" />
+                    <span>El reconocimiento de voz no estÃ¡ disponible en este navegador. Use Chrome, Edge o Safari.</span>
+                  </div>
+                )}
+                
+                {error && (
+                  <div className="flex items-center gap-2 text-red-400 bg-red-500/10 px-4 py-3 rounded-lg border border-red-500/20">
+                    <AlertCircle className="w-5 h-5" />
+                    <span>{error}</span>
+                  </div>
+                )}
+                
+                <button
+                  onClick={handleSearch}
+                  disabled={loading || isListening}
+                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-5 h-5" />
+                      Analizando...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="w-5 h-5" />
+                      PREDECIR COMPONENTES
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Select Component */}
+        {step === 'components' && (
+          <div className="animate-fadeIn">
+            <div className="mb-6 flex items-center justify-between">
+                <button
+                onClick={resetToInput}
+                className="flex items-center gap-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-3 px-5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                <ArrowLeft className="w-5 h-5" />
+                NUEVA BÚSQUEDA
+                </button>
+                <div className="text-gray-300 text-sm">
+                DESCRIPCIÓN: <span className="text-white font-medium">{description}</span>
+                </div>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20">
+              <h2 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
+                <Package className="w-6 h-6 text-blue-400" />
+                SELECCIONAR COMPONENTE
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {displayedComponents.map((comp, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleComponentSelect(comp)}
+                    disabled={loading}
+                    className="bg-white/10 hover:bg-blue-500/20 border-2 border-white/30 hover:border-blue-400 rounded-lg p-6 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <h3 className="text-xl font-bold text-white text-center">
+                      {comp.componentes.toUpperCase()}
+                    </h3>
+                  </button>
+                ))}
+              </div>
+              
+              <div className="mt-6 flex gap-4">
+                {hasPreviousComponents && (
+                  <button
+                    onClick={() => setComponentPage(componentPage - 1)}
+                    className="flex-1 bg-white/5 hover:bg-white/10 border-2 border-white/30 hover:border-blue-400 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                  >
+                    ANTERIOR
+                  </button>
+                )}
+                
+                {hasMoreComponents && (
+                  <button
+                    onClick={() => setComponentPage(componentPage + 1)}
+                    className="flex-1 bg-white/5 hover:bg-white/10 border-2 border-white/30 hover:border-blue-400 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                  >
+                    VER OTROS COMPONENTES
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: View Repairs */}
+        {step === 'repairs' && (
+          <div className="animate-fadeIn">
+            <div className="mb-6 flex items-center justify-between">
+              <button
+                onClick={backToComponents}
+                className="flex items-center gap-3 text-blue-300 hover:text-blue-200 transition-colors bg-white/10 hover:bg-white/20 px-6 py-3 rounded-lg border border-white/30 hover:border-blue-400 text-lg font-semibold"
+              >
+                <ArrowLeft className="w-6 h-6" />
+                VOLVER A COMPONENTES
+              </button>
+              <div className="text-gray-300 text-sm">
+                COMPONENTE: <span className="text-white font-medium">{selectedComponent?.componentes}</span>
+              </div>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20">
+              <h2 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
+                <Wrench className="w-6 h-6 text-blue-400" />
+                REPARACIONES RECOMENDADAS
+              </h2>
+              
+              <div className="space-y-4">
+                {displayedRepairs.map((repair, idx) => (
+  <div
+    key={idx}
+    className="bg-white/10 border-2 border-white/30 rounded-lg p-6 hover:border-blue-400 transition-all duration-300"
+  >
+    <p className="text-white text-lg leading-relaxed mb-3">
+      {repair.repair.toUpperCase()}
+    </p>
+
+    <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden mb-4">
+      <div 
+        className="h-full bg-gradient-to-r from-green-400 to-green-600 transition-all duration-500 rounded-full"
+        style={{ width: `${repair.final_score * 100}%` }}
+      />
+    </div>
+
+    {/* ✅ NEW BUTTON TO OPEN REGISTER WITH PREFILLED DATA */}
+    <button
+      onClick={() => {
+        const url = new URL('register.html', window.location.href);
+        url.searchParams.set('sintoma', description);
+        url.searchParams.set('componente', selectedComponent.componentes);
+        url.searchParams.set('reparacion', repair.repair);
+        window.open(url.toString(), '_blank');
+      }}
+      className="w-full mt-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+    >
+      Registrar esta reparación
+    </button>
+  </div>
+))}
+
+              </div>
+              
+              <div className="mt-6 flex gap-4">
+                {hasPreviousRepairs && (
+                  <button
+                    onClick={() => setRepairPage(repairPage - 1)}
+                    className="flex-1 bg-white/5 hover:bg-white/10 border-2 border-white/30 hover:border-blue-400 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                  >
+                    ANTERIOR
+                  </button>
+                )}
+                
+                {hasMoreRepairs && (
+                  <button
+                    onClick={() => setRepairPage(repairPage + 1)}
+                    className="flex-1 bg-white/5 hover:bg-white/10 border-2 border-white/30 hover:border-blue-400 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                  >
+                    VER OTRAS REPARACIONES
+                  </button>
+                )}
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-white/20">
+                <button
+                    onClick={resetToInput}
+                    className="flex items-center gap-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                    >
+                    <ArrowLeft className="w-6 h-6" />
+                    NUEVA BÚSQUEDA
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-fadeIn {
+          animation: fadeIn 0.5s ease-out;
+        }
+      `}</style>
+    </div>
+  );
+};
+
+        ReactDOM.render(<RepairPredictionSystem />, document.getElementById('root'));
+    </script>
+</body>
+</html>
