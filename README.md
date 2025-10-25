@@ -2,7 +2,7 @@
 
 This repository contains the code developed for the **X Hackathon of the Cátedra de Industria Conectada**, organized by **Universidad Pontificia Comillas (ICAI)** in collaboration with **Kearney** and **CAF**, where this project achieved **1st Place (Winners)**.
 
-The solution integrates a lightweight backend with multiple APIs and a user-friendly web interface to visualize and interact with the system in real time. It helps train operators to quickly identify and resolve the issues they are assigned.".
+The solution integrates a lightweight backend with multiple APIs and a user-friendly web interface to visualize and interact with the system in real time. It helps train operators to quickly identify and resolve the issues they are assigned.
 
 ## Team Members
 - Claudia Agromayor Lammert
