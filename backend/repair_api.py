@@ -9,8 +9,8 @@ CORS(app)
 
 # Initialize ranker
 ranker = EnhancedRepairRanker(
-    data_path='data/raw/data.xls',
-    hackathon_path='data/raw/hackathon.xls'
+    data_path='raw/data.xls',
+    hackathon_path='raw/hackathon.xls'
 )
 ranker.load_data(filter_clavero='FRE')
 ranker.load_model()
