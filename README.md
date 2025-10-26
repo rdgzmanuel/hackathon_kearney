@@ -1,6 +1,6 @@
 # Hackathon Kearney – Winning Project
 
-This repository contains the code developed for the **X Hackathon of the Cátedra de Industria Conectada**, organized by **Universidad Pontificia Comillas (ICAI)** in collaboration with **Kearney** and **CAF**, where this project achieved **1st Place (Winners)**.
+This repository contains the code developed for the **X Hackathon of the Cátedra de Industria Inteligente**, organized by **Universidad Pontificia Comillas (ICAI)** in collaboration with **Kearney** and **CAF**, where this project achieved **1st Place (Winners)**.
 
 The solution integrates a lightweight backend with multiple APIs and a user-friendly web interface to visualize and interact with the system in real time. It helps train operators to quickly identify and resolve the issues they are assigned.
 
@@ -164,6 +164,6 @@ print(response.json())
 Special thanks to:
 
 - **Universidad Pontificia Comillas – ICAI**
-- **Cátedra de Industria Conectada**
+- **Cátedra de Industria Inteligente**
 - **Kearney & CAF** for organizing the event and providing the challenge
 - Mentors, organizers, and all hackathon participants
