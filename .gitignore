@@ -11,9 +11,6 @@ __pycache__/
 *.xls
 *.xlsx
 
-# Ignore models
-*.pkl
-
 # Distribution / packaging
 .Python
 build/
